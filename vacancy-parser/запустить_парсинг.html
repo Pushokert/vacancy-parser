@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Парсер вакансий | Запуск</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 50px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.5);
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 200px;
+            padding: 18px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .result-box {
+            margin-top: 25px;
+            padding: 25px;
+            border-radius: 15px;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+            border: 2px solid;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .result-box.success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .result-box.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .result-box.info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        .result-box h3 {
+            margin-bottom: 10px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-box a {
+            color: inherit;
+            text-decoration: underline;
+            font-weight: 600;
+            transition: opacity 0.3s;
+        }
+
+        .result-box a:hover {
+            opacity: 0.8;
+        }
+
+        .info-card {
+            margin-top: 35px;
+            padding: 25px;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-radius: 20px;
+            border-left: 5px solid #ffc107;
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.2);
+        }
+
+        .info-card h3 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-card ol {
+            margin-left: 20px;
+            color: #856404;
+            line-height: 2;
+        }
+
+        .info-card li {
+            margin-bottom: 8px;
+        }
+
+        .info-card a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .info-card a:hover {
+            color: #764ba2;
+            transform: translateX(5px);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px dashed #ddd;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Парсер вакансий</h1>
+            <p>Автоматический сбор вакансий с ведущих сайтов поиска работы</p>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="startParsing()">
+                <span id="parseBtnText">▶️ Запустить парсинг</span>
+            </button>
+            <button class="btn-secondary" onclick="checkResults()">
+                📋 Проверить результаты
+            </button>
+        </div>
+
+        <div id="result"></div>
+
+        <div class="info-card">
+            <h3>📝 Как использовать</h3>
+            <ol>
+                <li>Нажмите кнопку <strong>"Запустить парсинг"</strong></li>
+                <li>Подождите 30-60 секунд для завершения сбора данных</li>
+                <li>Нажмите <strong>"Проверить результаты"</strong> или откройте в браузере:
+                    <br><a href="просмотр_вакансий.html" target="_blank">Открыть список вакансий</a>
+                </li>
+            </ol>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Всего вакансий</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="hhCount">0</div>
+                <div class="stat-label">hh.ru</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="sjCount">0</div>
+                <div class="stat-label">SuperJob</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="habrCount">0</div>
+                <div class="stat-label">Habr Career</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function startParsing() {
+            const resultDiv = document.getElementById('result');
+            const parseBtn = document.getElementById('parseBtnText');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-box info';
+            resultDiv.innerHTML = '<h3>⏳ Запускаю парсинг...</h3><p>Пожалуйста, подождите. Это может занять некоторое время.</p>';
+            
+            parseBtn.innerHTML = '<span class="loading"></span> Обработка...';
+            parseBtn.parentElement.disabled = true;
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/vacancies/parse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        urls: [
+                            "https://hh.ru/search/vacancy?text=java&area=1",
+                            "https://www.superjob.ru/vacancy/search/?keywords=java",
+                            "https://career.habr.com/vacancies?q=java"
+                        ],
+                        maxPages: 5
+                    })
+                });
+                
+                const text = await response.text();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Парсинг запущен успешно!</h3>
+                        <p>Подождите 30-60 секунд, затем нажмите "Проверить результаты" или откройте 
+                        <a href="просмотр_вакансий.html" target="_blank">список вакансий</a>.</p>
+                    `;
+                    
+                    // Автоматически проверяем результаты через 45 секунд
+                    setTimeout(() => {
+                        checkResults();
+                    }, 45000);
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `<h3>❌ Ошибка</h3><p>${text}</p>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Ошибка подключения</h3>
+                    <p>${error.message}</p>
+                    <p style="margin-top: 10px;">Убедитесь, что приложение запущено на порту 8080.</p>
+                `;
+            } finally {
+                parseBtn.innerHTML = '▶️ Запустить парсинг';
+                parseBtn.parentElement.disabled = false;
+            }
+        }
+        
+        async function checkResults() {
+            const resultDiv = document.getElementById('result');
+            const statsDiv = document.getElementById('stats');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-box info';
+            resultDiv.innerHTML = '<h3>⏳ Проверяю результаты...</h3><p>Загрузка данных...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/vacancies/answer?size=1000');
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    resultDiv.className = 'result-box info';
+                    resultDiv.innerHTML = `
+                        <h3>📭 База данных пуста</h3>
+                        <p>Нажмите "Запустить парсинг" для начала сбора вакансий.</p>
+                    `;
+                    statsDiv.style.display = 'none';
+                } else {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Найдено вакансий: <strong>${data.length}</strong></h3>
+                        <p>Откройте <a href="просмотр_вакансий.html" target="_blank">эту ссылку</a> для просмотра всех вакансий в удобном формате.</p>
+                    `;
+                    
+                    // Подсчитываем статистику по источникам
+                    const hhCount = data.filter(v => v.source === 'hh').length;
+                    const sjCount = data.filter(v => v.source === 'superjob').length;
+                    const habrCount = data.filter(v => v.source === 'habr').length;
+                    
+                    document.getElementById('totalCount').textContent = data.length;
+                    document.getElementById('hhCount').textContent = hhCount;
+                    document.getElementById('sjCount').textContent = sjCount;
+                    document.getElementById('habrCount').textContent = habrCount;
+                    
+                    statsDiv.style.display = 'flex';
+                }
+            } catch (error) {
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `<h3>❌ Ошибка подключения</h3><p>${error.message}</p>`;
+                statsDiv.style.display = 'none';
+            }
+        }
+
+        // Автоматически проверяем результаты при загрузке страницы
+        window.addEventListener('load', () => {
+            setTimeout(checkResults, 1000);
+        });
+    </script>
+</body>
+</html>
